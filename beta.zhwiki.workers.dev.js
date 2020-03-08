@@ -1,5 +1,7 @@
+var replyCallback
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
+  replyCallback = event.respondWith
+  handleRequest(event.request)
 })
 
 async function handleRequest(request) {
@@ -26,9 +28,9 @@ async function handleRequest(request) {
 
     url = path + argv
 
-    return fetch('https://zh.wikipedia.beta.wmflabs.org' + url, {
+    return fetch(`https://zh.wikipedia.beta.wmflabs.org${url}`, {
       method : 'POST',
-      redirect: 'follow',
+      body: send
     }).then(function(d){
       //var text = d.body
       //new Response(text.replace(/\/\/zh\.wikipedia\.org/, 'www.zhwiki.workers.dev')
