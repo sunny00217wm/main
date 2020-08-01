@@ -1,9 +1,9 @@
-// from https://github.com/itorr/nbnhhsh/blob/master/nbnhhsh.user.js
+// 亂改自 https://github.com/itorr/nbnhhsh/blob/master/nbnhhsh.user.js
 // ==UserScript==
-// @name         能不能好好说话？
+// @name         能不能好好說話？
 // @namespace    https://lab.magiconch.com/nbnhhsh
 // @version      0.14
-// @description  首字母缩写划词翻译工具
+// @description  首字母縮寫劃詞翻譯工具
 // @author       itorr
 // @match        https://t.me/*
 // @require      https://vuejs.org/js/vue.min.js
@@ -14,19 +14,26 @@
 let Nbnhhsh = ((htmlText,cssText)=>{
 
 	const API_URL = 'https://lab.magiconch.com/api/nbnhhsh/';
+	const ZHWP_API_URL = 'https://zh.wikipedia.org/w/api.php';
 
-	const request = (method,url,data,onOver)=>{
-		let x = new XMLHttpRequest();
-		x.open(method,url);
-		x.setRequestHeader('content-type', 'application/json');
-		x.withCredentials = true;
-		x.onload = ()=> onOver(x.responseText ? JSON.parse(x.responseText) : null);
-		x.send(JSON.stringify(data));
-		return x;
+	const request = function (method,url,data,onOver){
+		$.ajax({
+			type: method,
+			url: url,
+			data:{data},
+			success: function(data, textStatus) {
+				onOver(data, textStatus)
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log('Error: ' + errorThrown + ' / ' + textStatus);
+				console.log(jqXHR);
+				alert(`請求錯誤：${errorThrown}/${textStatus}－${jqXHR}`);
+			}
+		});
 	};
 
 	const Guess = {};
-	const guess = (text,onOver)=>{
+	const guess = function (text,onOver){
 		text = text.match(/[a-z0-9]+/ig).join(',');
 
 		if(Guess[text]){
@@ -38,19 +45,33 @@ let Nbnhhsh = ((htmlText,cssText)=>{
 		}
 
 		app.loading = true;
-		guess._request = request('POST',API_URL+'guess',{text},data=>{
+		
+		guess._request = request(
+			'POST',
+			`${API_URL}guess`,{text},function(data, textStatus){
 			Guess[text] = data;
 			onOver(data);
 			app.loading = false;
 		});
 	};
 
-	const submitTran = name=>{
-		let text = prompt('输入缩写对应文字 末尾可通过括号包裹（简略注明来源）','');
+	const submitTran = function (name){
+		let text = prompt('輸入縮寫對應文字， 結尾可使用括號包裹（簡略註明來源）','');
 
 		if(!text || !text.trim || !text.trim()){
 			return;
 		}
+		
+		request('GET',ZHWP_API_URL,{
+			action: 'parse',
+			text: text,
+			contentmodel: 'wikitext',
+			prop: ['text'],
+			uselang: 'zh-cn'
+		},(data)=>{
+			console.log(data)
+			//alert('感谢对好好说话项目的支持！审核通过后这条对应将会生效');
+		});
 
 		request('POST',API_URL+'translation/'+name,{text},()=>{
 			alert('感谢对好好说话项目的支持！审核通过后这条对应将会生效');
